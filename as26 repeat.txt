@@ -1,0 +1,62 @@
+
+drop table repsess;
+-- create temporary table repsess
+select
+is_repeat_session,
+website_session_id,
+user_id
+from website_sessions
+where created_at between '2014-01-01' and '2014-11-01';
+
+
+drop table repsess2;
+-- create temporary table repsess2
+select
+user_id as id,
+SUM(is_repeat_session) as sessions
+from repsess
+group by 1;
+
+select
+sessions,
+count(distinct id) as user
+from repsess2
+group by 1;
+
+
+-- teachers answer 
+
+create temporary table t
+select
+ newsessions.user_id,
+ newsessions.website_session_id as nsid,
+ website_sessions.website_session_id as rsid
+ from
+ (
+ select
+ user_id,
+ website_session_id
+ from website_sessions
+ where created_at < '2014-11-01'
+ and created_at >= '2014-01-01'
+ and is_repeat_session = 0) as newsessions
+ left join website_sessions
+ on website_sessions.user_id = newsessions.user_id
+ and website_sessions.is_repeat_session = 1
+ and website_sessions.website_session_id > newsessions.website_session_id
+ and website_sessions.created_at < '2014-11-03'
+ and website_sessions.created_at >= '2014-01-01';
+ 
+ select
+ rsessions,
+ count(distinct user_id) as users
+ from
+ (
+ select
+ user_id,
+ count(distinct nsid) as newsessions,
+ count(distinct rsid) as rsessions
+ from t
+ group by 1
+ order by 3 desc) as userlevel
+ group by 1;

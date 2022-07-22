@@ -1,0 +1,99 @@
+
+-- nested statement
+select
+is_repeat_session as repeated,
+user_id as id
+from website_sessions
+where created_at between '2014-01-01' and '2014-11-01'
+and is_repeat_session = 0;
+
+
+drop table repdate;
+-- create temporary table repdate
+
+select
+is_repeat_session,
+website_session_id,
+id,
+date(created_at) as created
+from
+(select
+is_repeat_session as repeated,
+user_id as id
+from website_sessions
+where created_at between '2014-01-01' and '2014-11-01'
+and is_repeat_session = 0) as aplha
+left join website_sessions
+on id = user_id;
+
+-- create temporary table repdate2
+select
+id,
+sessions
+from
+(select
+id,
+sum(is_repeat_session) as sessions
+from repdate
+group by 1) as beta
+where sessions = 1;
+
+select
+distinct id,
+case when is_repeat_session = 0 then website_session_id end as firstses,
+case when is_repeat_session = 1 then website_session_id end as secsess,
+case when is_repeat_session = 0 then date(created_at) end as firstdate,
+case when is_repeat_session = 1 then date(created_at) end as secdate
+from website_sessions
+ join repdate2
+on id = user_id
+where created_at between '2014-01-01' and '2014-11-04'
+;
+-- teachers answer cause i gave up
+
+--  create temporary table sessionswrep
+select
+ newsessions.user_id,
+ newsessions.website_session_id as nsid,
+ newsessions.created_at as nscreated,
+ website_sessions.website_session_id as rsid,
+ website_sessions.created_at as rscreated
+ from
+ (
+ select
+ user_id,
+ website_session_id,
+ created_at
+ from website_sessions
+ where created_at < '2014-11-03'
+ and created_at >= '2014-01-01'
+ and is_repeat_session = 0) as newsessions
+ left join website_sessions
+ on website_sessions.user_id = newsessions.user_id
+ and website_sessions.is_repeat_session = 1
+ and website_sessions.website_session_id > newsessions.website_session_id
+ and website_sessions.created_at < '2014-11-03'
+ and website_sessions.created_at >= '2014-01-01';
+ 
+ 
+-- create temporary table fs
+ select
+ user_id,
+ datediff(secsessioncreated,nscreated) as days_first_to_second
+ from
+ (
+ select
+ user_id,
+ nsid,
+ nscreated,
+ min(rsid) as ssid,
+ min(rscreated) as secsessioncreated
+ from sessionswrep
+ where rsid is not null
+ group by 1,2,3) as fs;
+ 
+ select
+ avg(days_first_to_second),
+ min(days_first_to_second),
+ max(days_first_to_second)
+ from fs;

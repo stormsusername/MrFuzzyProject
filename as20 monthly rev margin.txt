@@ -1,0 +1,9 @@
+select
+year(created_at) as yr,
+month(created_at) as mo,
+count(distinct order_id) as orders,
+sum(price_usd) as rev,
+sum(price_usd - cogs_usd) as margin
+FROM orders
+where created_at < '2013-01-04'
+GROUP by 1,2;

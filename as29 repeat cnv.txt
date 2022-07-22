@@ -1,0 +1,10 @@
+select
+is_repeat_session,
+COUNt(distinct website_sessions.website_session_id) as sessions,
+COUNT(distinct order_id)/COUNt(distinct website_sessions.website_session_id) as cnv,
+sum(price_usd)/COUNt(distinct website_sessions.website_session_id) as rps
+from website_sessions
+left join orders
+on orders.website_session_id = website_sessions.website_session_id
+where website_sessions.created_at between '2014-01-01' and '2014-11-08'
+group by 1;

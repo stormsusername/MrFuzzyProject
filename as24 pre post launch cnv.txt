@@ -1,0 +1,25 @@
+select
+case
+when created between '2013-11-12' and '2013-12-11' then 'pre'
+when created between '2013-12-12' and '2014-01-12' then 'post'
+else null end as period,
+count(distinct oid)/count(distinct sid) as cnv,
+sum(price)/count(distinct oid) as aov,
+sum(items)/count(distinct oid) as ppo,
+sum(price)/count(distinct sid) as rps
+from
+(select
+date(website_sessions.created_at) as created,
+website_sessions.website_session_id as sid,
+orders.order_id as oid,
+items_purchased as items,
+price_usd as price
+from website_sessions
+left join orders
+on orders.website_session_id = website_sessions.website_session_id
+) as ppe
+where created between '2013-11-12' and '2014-01-12'
+group by 1;
+
+
+

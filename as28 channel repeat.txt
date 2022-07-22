@@ -1,0 +1,117 @@
+select
+ utm_source,
+ utm_campaign,
+ http_referer
+from website_sessions
+group by 1,2,3;
+
+c case when utm_source is null and utm_campaign is null and http_referer is null then 'direct'
+ when utm_campaign = 'nonbrand' then 'nonbrand'
+when utm_campaign = 'brand' then 'brand' 
+when utm_source = 'socialbook' then 'social'
+when (utm_source,utm_campaign) is null and http_referer is not null then 'organic';
+
+-- new sessions
+
+select
+ user_id,
+ website_session_id,
+  utm_source,
+ utm_campaign,
+ http_referer,
+case when utm_source is null and utm_campaign is null and http_referer is null then 'direct'
+	when utm_campaign = 'nonbrand' then 'nonbrand'
+	when utm_campaign = 'brand' then 'brand' 
+	when utm_source = 'socialbook' then 'social'
+	when utm_source is null and utm_campaign is null and http_referer is not null then 'organic'
+else null end as newchanneltype
+ from website_sessions
+ where created_at < '2014-11-01'
+ and created_at >= '2014-01-01'
+ and is_repeat_session = 0;
+ 
+ -- t table
+ 
+ drop table sources;
+-- create temporary table sources
+ select
+ newsessions.user_id,
+ newsessions.website_session_id as nsid,
+ newsessions.utm_source as nsource,
+ newsessions.utm_campaign as ncampaign,
+ newsessions.http_referer as nrefer,
+ newchanneltype,
+ website_sessions.website_session_id as rsid,
+  website_sessions.utm_source as rsource,
+  website_sessions.utm_campaign as rcampaign,
+  website_sessions.http_referer as rrefer,
+  case when website_sessions.utm_source is null and website_sessions.utm_campaign is null and website_sessions.http_referer is null and website_sessions.website_session_id is not null then 'direct'
+	when website_sessions.utm_campaign = 'nonbrand' then 'nonbrand'
+	when website_sessions.utm_campaign = 'brand' then 'brand' 
+	when website_sessions.utm_source = 'socialbook' then 'social'
+	when website_sessions.utm_source is null and website_sessions.utm_campaign is null and website_sessions.http_referer is not null then 'organic'
+else null end as repchanneltype
+ from
+ (
+ select
+ user_id,
+ website_session_id,
+ utm_source,
+ utm_campaign,
+ http_referer,
+ case when utm_source is null and utm_campaign is null and http_referer is null then 'direct'
+	when utm_campaign = 'nonbrand' then 'nonbrand'
+	when utm_campaign = 'brand' then 'brand' 
+	when utm_source = 'socialbook' then 'social'
+	when utm_source is null and utm_campaign is null and http_referer is not null then 'organic'
+else null end as newchanneltype
+ from website_sessions
+ where created_at < '2014-11-05'
+ and created_at >= '2014-01-01'
+ and is_repeat_session = 0) as newsessions
+ left join website_sessions
+ on website_sessions.user_id = newsessions.user_id
+ and website_sessions.is_repeat_session = 1
+ and website_sessions.website_session_id > newsessions.website_session_id
+ and website_sessions.created_at < '2014-11-05'
+ and website_sessions.created_at >= '2014-01-01';
+ 
+ select
+ case
+ when newchanneltype = 'direct' or repchanneltype = 'direct' then 'direct'
+  when newchanneltype = 'organic' or repchanneltype = 'organic' then 'organic'
+ when newchanneltype = 'social' or repchanneltype = 'social' then 'social'
+ when newchanneltype = 'brand' or repchanneltype = 'brand' then 'brand'
+ when newchanneltype = 'nonbrand' or repchanneltype = 'nonbrand' then 'nonbrand'
+ else null end as channelgroup,
+ count(distinct nsid) as newsessions,
+ count(distinct rsid) as repeatsessions
+ from sources
+ group by 1;
+
+-- teachers answer
+
+select
+ utm_source,
+ utm_campaign,
+ http_referer,
+ count(case when is_repeat_session = 0 then website_session_id else null end) as newsess,
+  count(case when is_repeat_session = 1 then website_session_id else null end) as repsess
+from website_sessions
+where created_at < '2014-11-05'
+ and created_at >= '2014-01-01'
+group by 1,2,3;
+
+select
+ case when utm_source is null and utm_campaign is null and http_referer is null then 'direct'
+	when utm_campaign = 'nonbrand' then 'nonbrand'
+	when utm_campaign = 'brand' then 'brand' 
+	when utm_source = 'socialbook' then 'social'
+	when utm_source is null and utm_campaign is null and http_referer is not null then 'organic'
+else null end as channeltype,
+count(case when is_repeat_session = 0 then website_session_id else null end) as newsess,
+  count(case when is_repeat_session = 1 then website_session_id else null end) as repsess
+  from website_sessions
+  where created_at < '2014-11-05'
+ and created_at >= '2014-01-01'
+group by 1;

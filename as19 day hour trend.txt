@@ -1,0 +1,43 @@
+-- my answer before getting confused on what average means
+
+SELECT
+hr,
+COUNT(DISTINCT CASE WHEN day_week = 1 THEN sessions ELSE NULL END) as mon,
+COUNT(DISTINCT CASE WHEN day_week = 2 THEN sessions ELSE NULL END) as tue,
+COUNT(DISTINCT CASE WHEN day_week = 3 THEN sessions ELSE NULL END) as wed,
+COUNT(DISTINCT CASE WHEN day_week = 4 THEN sessions ELSE NULL END) as thur,
+COUNT(DISTINCT CASE WHEN day_week = 5 THEN sessions ELSE NULL END) as fri,
+COUNT(DISTINCT CASE WHEN day_week = 6 THEN sessions ELSE NULL END) as sat,
+COUNT(DISTINCT CASE WHEN day_week = 7 THEN sessions ELSE NULL END) as sun
+FROM
+(select
+website_session_id as sessions,
+hour(created_at) as hr,
+weekday(created_at) as day_week
+FROM website_sessions
+WHERE created_at BETWEEN '2012-09-15' AND '2012-11-15') as hour_day
+GROUP BY hr;
+
+
+-- teachers answer
+SELECT
+hr,
+ROUND(avg(sessions),1) as avgsess,
+ROUND(avg(case when day_week = 0 THEN sessions ELSE NULL END),1) as mon,
+ROUND(avg(case when day_week = 1 THEN sessions ELSE NULL END),1) as tue,
+ROUND(avg(case when day_week = 2 THEN sessions ELSE NULL END),1) as wed,
+ROUND(avg(case when day_week = 3 THEN sessions ELSE NULL END),1) as thur,
+ROUND(avg(case when day_week = 4 THEN sessions ELSE NULL END),1) as fri,
+ROUND(avg(case when day_week = 5 THEN sessions ELSE NULL END),1) as sat,
+ROUND(avg(case when day_week = 6 THEN sessions ELSE NULL END),1) as sun
+FROM
+(select
+date(created_at),
+weekday(created_at) as day_week,
+hour(created_at) as hr,
+COUNT(DISTINCT website_session_id) as sessions
+FROM website_sessions
+WHERE created_at BETWEEN '2012-09-15' AND '2012-11-15'
+group by 1,2,3) as www
+GROUP BY 1
+order by hr asc;

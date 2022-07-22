@@ -1,0 +1,14 @@
+select
+year(website_sessions.created_at) as yr,
+month(website_sessions.created_at) as mo,
+count(website_sessions.website_session_id) as sessions,
+count(orders.order_id) as orders,
+COUNT(orders.order_id)/COUNT(website_sessions.website_session_id) as cnv,
+sum(price_usd)/count(distinct website_sessions.website_session_id) as revsess,
+COUNT(distinct case when primary_product_id = 1 then orders.order_id else null end) as p1orders,
+COUNT(distinct case when primary_product_id = 2 then orders.order_id else null end) as p2orders
+FROM website_sessions
+LEFT JOIN orders
+on website_sessions.website_session_id = orders.website_session_id
+WHERE website_sessions.created_at between '2012-04-01' and '2013-04-01'
+GROUP by 1,2;

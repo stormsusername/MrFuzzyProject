@@ -1,0 +1,37 @@
+-- create temporary table preturns
+select
+year(order_items.created_at)as yr,
+month(order_items.created_at) as mo,
+order_items.order_id as oid,
+order_item_refund_id as oirid,
+case when product_id = 1 then 1 else null end as p1orders,
+case when product_id = 2 then 1 else null end as p2orders,
+case when product_id = 3 then 1 else null end as p3orders,
+case when product_id = 4 then 1 else null end as p4orders
+from order_items
+left join order_item_refunds
+on order_item_refunds.order_item_id = order_items.order_item_id
+where order_items.created_at < '2014-10-15'
+;
+
+select
+yr,
+mo,
+count(distinct case when p1orders is not null then oid else null end) as p1orders,
+-- count(distinct case when p1orders is not null and oirid is not null then oid else null end) as p1return,
+count(distinct case when p1orders is not null and oirid is not null then oid else null end)/
+count(distinct case when p1orders is not null then oid else null end) as p1returnrate,
+count(distinct case when p2orders is not null then oid else null end) as p2orders,
+-- count(distinct case when p2orders is not null and oirid is not null then oid else null end) as p2return,
+count(distinct case when p2orders is not null and oirid is not null then oid else null end)/
+count(distinct case when p2orders is not null then oid else null end) as p2returnrate,
+count(distinct case when p3orders is not null then oid else null end) as p3orders,
+-- count(distinct case when p3orders is not null and oirid is not null then oid else null end) as p3return,
+count(distinct case when p3orders is not null and oirid is not null then oid else null end)/
+count(distinct case when p3orders is not null then oid else null end) as p3returnrate,
+count(distinct case when p4orders is not null then oid else null end) as p4orders,
+-- count(distinct case when p4orders is not null and oirid is not null then oid else null end) as p4return,
+count(distinct case when p4orders is not null and oirid is not null then oid else null end)/
+count(distinct case when p4orders is not null then oid else null end) as p4returnrate
+from preturns
+group by 1,2;

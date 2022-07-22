@@ -1,0 +1,69 @@
+-- my answer
+
+select
+launch,
+count(distinct sesid) as sessions,
+count(distinct case when pageview in ('/the-original-mr-fuzzy', '/the-forever-love-bear') then sesid else null end) as nextpage,
+count(distinct case when pageview in ('/the-original-mr-fuzzy', '/the-forever-love-bear') then sesid else null end)/count(distinct sesid) as nextpct,
+count(distinct case when pageview = '/the-original-mr-fuzzy' then sesid else null end) as fuzzyses,
+count(distinct case when pageview = '/the-original-mr-fuzzy' then sesid else null end)/count(distinct sesid) as fuzzpct,
+count(distinct case when pageview = '/the-forever-love-bear' then sesid else null end) as loveses,
+count(distinct case when pageview = '/the-forever-love-bear' then sesid else null end)/count(distinct sesid) as lovpct
+from
+(select
+case when created_at between '2012-10-06' and '2013-01-06' then 'prelaunch'
+	when created_at between '2013-01-06' and '2013-04-06' then 'postlaunch' else null end as launch,
+website_session_id as sesid,
+website_pageview_id as pvid,
+pageview_url as pageview
+from website_pageviews
+where pageview_url in ('/products','/the-original-mr-fuzzy', '/the-forever-love-bear')
+and created_at between '2012-10-06' and '2013-04-06') as t5
+group by launch
+order by 2 desc;
+
+-- teachers answer
+
+create temporary table t1
+select
+website_session_id as sid,
+website_pageview_id as pvid,
+created_at,
+case when created_at between '2012-10-06' and '2013-01-06' then 'prelaunch'
+	when created_at between '2013-01-06' and '2013-04-06' then 'postlaunch' else null end as launch
+from website_pageviews
+where created_at between '2012-10-06' and '2013-04-06'
+and pageview_url = '/products';
+
+create temporary table t2
+select
+t1.launch,
+t1.sid,
+min(website_pageviews.website_pageview_id) as nxtpvid
+from t1
+left join website_pageviews
+on t1.sid = website_pageviews.website_session_id
+and website_pageviews.website_pageview_id > t1.pvid
+group by 1,2;
+
+create temporary table t3
+select
+t2.launch,
+t2.sid,
+website_pageviews.pageview_url as pageview
+from t2
+left join website_pageviews
+on website_pageviews.website_pageview_id = t2.nxtpvid;
+
+select
+launch,
+count(distinct sid),
+count(distinct case when pageview IS NOT NULL then sid else null end) as nxtpg,
+count(distinct case when pageview IS NOT NULL then sid else null end)/count(distinct sid) nxtpgpct,
+count(distinct case when pageview = '/the-original-mr-fuzzy' then sid else null end) as fuzzyses,
+count(distinct case when pageview = '/the-original-mr-fuzzy' then sid else null end)/count(distinct sid) as fuzzpct,
+count(distinct case when pageview = '/the-forever-love-bear' then sid else null end) as loveses,
+count(distinct case when pageview = '/the-forever-love-bear' then sid else null end)/count(distinct sid) as lovpct
+from t3
+group by 1
+order by 2 desc;

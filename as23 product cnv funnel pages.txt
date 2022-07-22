@@ -1,0 +1,66 @@
+-- part 1 my answer
+create temporary table p1
+select
+product,
+COUNT(distinct case when product in ('fuzzy', 'luvbear') then sid else null end) as sessions,
+COUNT(DISTINct case when pageview = '/cart' then sid else null end) as cart,
+COUNT(distinct case when pageview = '/shipping' then sid else null end) as shipping,
+COUNT(distinct case when pageview in ('/billing-2', '/billing') then sid else null end) as billing,
+count(distinct case when pageview = '/thank-you-for-your-order' then sid else null end) as thanks
+from
+(select
+product,
+sid,
+website_pageviews.website_pageview_id as pvids,
+pageview_url as pageview
+from
+(select
+website_session_id as sid,
+website_pageview_id as pvid,
+created_at,
+case when pageview_url = '/the-original-mr-fuzzy' then 'fuzzy'
+	when pageview_url = '/the-forever-love-bear' then 'luvbear' else null end as product
+from website_pageviews
+where created_at between '2013-01-06' and '2013-04-10'
+and pageview_url in ('/the-original-mr-fuzzy', '/the-forever-love-bear')) as a1
+right join website_pageviews
+on sid = website_pageviews.website_session_id
+and website_pageviews.website_pageview_id >= pvid
+where website_pageviews.created_at between '2013-01-06' and '2013-04-10') as a2
+where product in ('fuzzy', 'luvbear')
+group by product
+;
+
+-- part 2 my answer
+select
+product,
+cart/sessions as cart_click,
+shipping/cart as shipping_click,
+billing/shipping as billing_click,
+thanks/billing as thanks_click
+from p1;
+
+-- teachers answer, same answer
+
+create temporary table pseen
+select
+website_session_id,
+website_pageview_id,
+pageview_url as productseen
+from website_pageviews
+where created_at between '2013-01-06' and '2013-04-10'
+and pageview_url in ('/the-original-mr-fuzzy', '/the-forever-love-bear');
+
+select
+pseen.website_session_id,
+pseen.productseen,
+case when pageview_url = '/cart' then 1 else 0 end as cartpage,
+case when pageview_url = '/shipping' then 1 else 0 end as shippage,
+case when pageview_url = '/billing-2' then 1 else 0 end as billpage,
+case when pageview_url = '/thank-you-for-your-order' then 1 else 0 end as thankspage
+from pseen
+left join website_pageviews
+on website_pageviews.website_session_id = pseen.website_session_id
+and website_pageviews.website_pageview_id > pseen.website_pageview_id
+order by 1,
+website_pageviews.created_at;
