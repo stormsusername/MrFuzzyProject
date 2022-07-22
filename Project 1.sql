@@ -1,4 +1,4 @@
--- Task 1
+-- Task 1: count sessions and orders per month from Google Search Ads
 SELECT
 MONTH(website_sessions.created_at) AS months,
 COUNT(website_sessions.website_session_id) AS total_sessions,
@@ -10,7 +10,7 @@ WHERE website_sessions.created_at < '2012-11-27'
 AND website_sessions.utm_source = 'gsearch'
 GROUP BY MONTH(website_sessions.created_at);
 
--- Task 2
+-- Task 2: Count Google Search brand and nonbrand sessions and orders
 
 -- gsearch list table
 DROP TABLE gsearch;
@@ -37,7 +37,8 @@ COUNT(DISTINCT CASE WHEN campaign = 'brand' THEN ordering_id ELSE NULL END) AS b
 FROM gsearch
 GROUP BY months;
 
--- task 3
+-- task 3: Count nonbrand google search sessions and orders based on their device type
+
 DROP TABLE nonbrand_gsearch;
 CREATE TEMPORARY TABLE nonbrand_gsearch
 SELECT
@@ -63,7 +64,7 @@ COUNT(DISTINCT CASE WHEN device = 'mobile' THEN ordering_id ELSE NULL END) AS mo
 FROM nonbrand_gsearch
 GROUP BY months;
 
--- task 4
+-- task 4: Identify Bing Search, Google Search, Organic, and Direct traffic based on sessions
 -- find sources
 SELECT
 utm_source,
@@ -87,7 +88,7 @@ FROM website_sessions
 WHERE website_sessions.created_at < '2012-11-27'
 GROUP BY MONTH(created_at);
 
--- task 5
+-- task 5: Session to order conversion
 
 SELECT
 MONTH(website_sessions.created_at) AS months,
@@ -100,8 +101,9 @@ ON website_sessions.website_session_id = orders.website_session_id
 WHERE website_sessions.created_at < '2012-11-27'
 GROUP BY MONTH(website_sessions.created_at);
 
--- task 6
--- teachers answer
+-- task 6: Track the performance of the two landing pages and see which one leads to more sales
+-- Ans 1
+
 CREATE TEMPORARY TABLE first_test_pageviews
 SELECT
 website_pageviews.website_session_id,
@@ -164,65 +166,8 @@ and utm_campaign = 'nonbrand';
 
 
 
--- my answer
-DROP TABLE before_orders_id;
-CREATE TEMPORARY TABLE before_orders_id
-SELECT
-orders.website_session_id,
-orders.price_usd
-FROM orders
-LEFT JOIN website_sessions
-ON website_sessions.website_session_id = orders.website_session_id
-WHERE website_sessions.created_at < '2012-07-28' 
-AND website_sessions.created_at > '2012-06-19'
-AND website_sessions.utm_source = 'gsearch'
-AND website_sessions.utm_campaign = 'nonbrand';
+-- task 7: funnel traffic conversion
 
-
-DROP TABLE before_land_id;
--- CREATE TEMPORARY TABLE before_land_id
-SELECT
-website_session_id,
-MIN(website_pageview_id) AS minpv_id
-FROM website_pageviews
-WHERE created_at < '2012-07-28'
-AND created_at > '2012-06-19'
-GROUP BY website_session_id;
-
-
-DROP TABLE before_land_ses_view;
-CREATE TEMPORARY TABLE before_land_ses_view
-SELECT
-website_pageviews.pageview_url AS entry_page,
-before_land_id.website_session_id AS ses_on_lander
-FROM before_land_id
-LEFT JOIN website_pageviews
-ON before_land_id.minpv_id = website_pageviews.website_pageview_id
-WHERE website_pageviews.pageview_url = '/home' OR website_pageviews.pageview_url = '/lander-1'
-;
-
-
-DROP TABLE before_rev;
-CREATE TEMPORARY TABLE before_rev_order
-SELECT
-ses_on_lander,
-entry_page,
-orders.order_id
-FROM before_land_ses_view
-LEFT JOIN orders
-ON ses_on_lander = orders.website_session_id
-;
-
-SELECT
-entry_page,
-COUNT(DISTINCT ses_on_lander),
-COUNT(DISTINCT order_id),
-COUNT(DISTINCT order_id)/COUNT(DISTINCT ses_on_lander)
-FROM before_rev_order
-GROUP BY entry_page;
-
--- task 7
--- teachers answer
 select
 website_sessions.website_session_id,
 website_pageviews.pageview_url,
@@ -314,38 +259,9 @@ FROM hits
 GROUP BY 1;
 
 
--- my answer
-SELECT
-website_pageviews.website_session_id,
-website_pageviews.pageview_url AS lander_version_seen,
-orders.order_id
-FROM website_pageviews
-LEFT JOIN orders
-ON website_pageviews.website_session_id = orders.website_session_id
-WHERE website_pageviews.created_at < '2012-07-28'
-AND website_pageviews.created_at > '2012-06-19'
-AND website_pageviews.pageview_url IN ('/home', '/lander-1');
 
-SELECT
-lander_version_seen,
-COUNT(DISTINCT website_session_id) AS sessions,
-COUNT(DISTINCT order_id) AS orders,
-COUNT(DISTINCT order_id)/COUNT(DISTINCT website_session_id) AS rate
-FROM(
-SELECT
-website_pageviews.website_session_id,
-website_pageviews.pageview_url AS lander_version_seen,
-orders.order_id
-FROM website_pageviews
-LEFT JOIN orders
-ON website_pageviews.website_session_id = orders.website_session_id
-WHERE website_pageviews.created_at < '2012-07-28'
-AND website_pageviews.created_at > '2012-06-19'
-AND website_pageviews.pageview_url IN ('/home', '/lander-1'))
-AS landing_sessions
-GROUP BY lander_version_seen;
 
--- task 8
+-- task 8: Track performance of original and new billing page
 
 SELECT
 website_pageviews.website_session_id,
