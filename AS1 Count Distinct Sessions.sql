@@ -1,3 +1,5 @@
+-- This code counts the number of distinct sessions based off source, campaign and domain and groups the results
+
 USE mavenfuzzyfactory;
 
 SELECT
