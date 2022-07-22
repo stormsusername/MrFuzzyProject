@@ -1,4 +1,4 @@
--- q1
+-- q1: Identify quarterly total sessions and orders
 
 select
 yr,
@@ -18,7 +18,7 @@ on orders.website_session_id = website_sessions.website_session_id
 where website_sessions.created_at < '2015-03-20') as q
 group by 1,2;
 
--- q2
+-- q2: Identify quarterly session to order conversion, revenue per order and revenue per session
 
 select
 yr,
@@ -40,7 +40,7 @@ on orders.website_session_id = website_sessions.website_session_id
 where website_sessions.created_at < '2015-03-20') as q
 group by 1,2;
 
--- q3
+-- q3 : Identify sessions and where the traffic came from
 
 select
 yr,
@@ -69,7 +69,7 @@ on orders.website_session_id = website_sessions.website_session_id
 where orders.created_at < '2015-03-20') as q
 group by 1,2;
 
--- q4
+-- q4: Find the session to order conversion and traffic source
 
 
 select
@@ -99,7 +99,7 @@ on orders.website_session_id = website_sessions.website_session_id
 where website_sessions.created_at < '2015-03-20') as q
 group by 1,2;
 
--- q5
+-- q5: Track the sales of the four different products with total revenue and sales
 
 select
 yr,
@@ -128,7 +128,7 @@ from order_items
 where created_at < '2015-03-20') as m
 group by 1,2;
 
--- q6
+-- q6: Identify the clickthrough rate of all products from products page as well as the session to order conversion from that page
 
 drop table minpcv;
 -- create temporary table minpcv
@@ -175,31 +175,7 @@ left join orders
 on orders.website_session_id = minpcv.website_session_id
 group by 1,2;
 
--- q7
-
--- my answer
-
-select
-count(distinct oid) as orders,
-count(distinct case when pid = 1 then oid else null end) as p1sales,
-count(distinct case when pid = 1 and crosssell = 0 then oid else null end) as p1cross,
-count(distinct case when pid = 2 then oid else null end) as p2sales,
-count(distinct case when pid = 2 and crosssell = 0 then oid else null end) as p2cross,
-count(distinct case when pid = 3 then oid else null end) as p3sales,
-count(distinct case when pid = 3 and crosssell = 0 then oid else null end) as p3cross,
-count(distinct case when pid = 4 then oid else null end) as p4sales,
-count(distinct case when pid = 4 and crosssell = 0 then oid else null end) as p4cross
-from
-(select
-order_item_id as oiid,
-order_id as oid,
-product_id as pid,
-is_primary_item as crosssell
-from order_items
-where created_at > '2014-12-05'
-and created_at <= '2015-03-20') as c;
-
--- teachers answer
+-- q7: Identify which product cross sold the most and with what product
 
 
 drop table pp;
@@ -242,6 +218,3 @@ on order_items.order_id = pp.order_id
 and order_items.is_primary_item = 0
 order by 3 desc) as pc
 group by 1;
-
--- q8
-
